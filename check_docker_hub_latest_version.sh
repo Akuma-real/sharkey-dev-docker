@@ -1,41 +1,68 @@
-name: Version Compare
+#!/bin/bash
 
-on:
-  workflow_dispatch:
+# 检查并安装 jq
+if ! command -v jq &> /dev/null; then
+    echo "jq 未安装。正在安装..."
+    # 检查操作系统类型
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo "无法检测到操作系统，手动安装 jq。"
+        exit 1
+    fi
 
-jobs:
-  compare-versions:
-    runs-on: ubuntu-latest
+    # 根据操作系统安装 jq
+    case "$OS" in
+        ubuntu|debian)
+            sudo apt-get update
+            sudo apt-get install -y jq
+            ;;
+        centos|rhel)
+            sudo yum install -y epel-release
+            sudo yum install -y jq
+            ;;
+        fedora)
+            sudo dnf install -y jq
+            ;;
+        *)
+            echo "不支持的操作系统，请手动安装 jq。"
+            exit 1
+            ;;
+    esac
+fi
 
-    steps:
-    - name: Clone Source Repository
-      run: |
-        git clone https://activitypub.software/TransFem-org/Sharkey.git
-        cd Sharkey
+# 检查 jq 是否安装成功
+if ! command -v jq &> /dev/null; then
+    echo "jq 安装失败，请手动安装。"
+    exit 1
+fi
 
-    - name: Extract Version from package.json
-      id: extract_version
-      run: |
-        cd Sharkey
-        remote_version=$(jq -r '.version' package.json)
-        echo "remote_version=$remote_version" >> $GITHUB_ENV
-        echo "Extracted remote version: $remote_version"
+repository="juneink/sharkey"
 
-    - name: Get Docker Latest Version
-      run: |
-        curl -o check_docker_hub_latest_version.sh \
-          https://raw.githubusercontent.com/Akuma-real/sharkey-dev-docker/refs/heads/master/check_docker_hub_latest_version.sh
-        chmod +x check_docker_hub_latest_version.sh
-        latest_version=$(./check_docker_hub_latest_version.sh)
-        echo "docker_version=$latest_version" >> $GITHUB_ENV
-        echo "Extracted Docker version: $latest_version"
+# 从 Docker Hub 获取标签信息
+response=$(curl -s "https://hub.docker.com/v2/repositories/$repository/tags/")
 
-    - name: Compare Versions
-      run: |
-        echo "Remote package.json version: ${{ env.remote_version }}"
-        echo "Docker latest version: ${{ env.docker_version }}"
-        if [ "${{ env.remote_version }}" != "${{ env.docker_version }}" ]; then
-          echo "版本不同，需要更新。"
-        else
-          echo "版本相同，无需更新。"
-        fi
+# 检查响应是否为空
+if [ -z "$response" ]; then
+    echo "无法从 Docker Hub 获取数据"
+    exit 1
+fi
+
+# 提取 latest 标签的信息
+latest_info=$(echo "$response" | jq -r '.results[] | select(.name=="latest")')
+
+# 检查是否找到了 latest 标签
+if [ -z "$latest_info" ]; then
+    echo "未找到 'latest' 标签"
+    exit 1
+fi
+
+# 获取 latest 标签的Digest
+latest_digest=$(echo "$latest_info" | jq -r '.digest')
+
+# 查找与 latest 标签Digest相同的所有标签，并排除 latest
+matching_tags=$(echo "$response" | jq -r --arg digest "$latest_digest" '.results[] | select(.digest==$digest and .name!="latest") | .name')
+
+# 只输出匹配的版本号
+echo "$matching_tags"
