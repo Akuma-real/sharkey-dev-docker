@@ -18,15 +18,15 @@ jobs:
         sudo apt-get install -y jq
       # 安装 jq 工具用于 JSON 解析
       # 调试: 确保 jq 安装成功
-      - name: Check jq Version
-        run: jq --version
+    - name: Check jq Version
+      run: jq --version
 
     - name: Clone Remote Repository
       run: git clone https://activitypub.software/TransFem-org/Sharkey.git
       # 克隆远程仓库
       # 调试: 在克隆后列出文件，确保目录存在
-      - name: List Files in Sharkey
-        run: ls Sharkey
+    - name: List Files in Sharkey
+      run: ls Sharkey
 
     - name: Print package.json
       run: cat Sharkey/package.json
