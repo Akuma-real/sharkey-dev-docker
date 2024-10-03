@@ -64,6 +64,5 @@ latest_digest=$(echo "$latest_info" | jq -r '.digest')
 # 查找与 latest 标签Digest相同的所有标签，并排除 latest
 matching_tags=$(echo "$response" | jq -r --arg digest "$latest_digest" '.results[] | select(.digest==$digest and .name!="latest") | .name')
 
-# 显示结果
-echo "与 'latest' 标签相同Digest的其他版本号："
+# 只输出匹配的版本号
 echo "$matching_tags"
