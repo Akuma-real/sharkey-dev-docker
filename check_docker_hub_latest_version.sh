@@ -46,7 +46,7 @@ response=$(curl -s "https://hub.docker.com/v2/repositories/$repository/tags/")
 # 检查响应是否为空
 if [ -z "$response" ]; then
     echo "无法从 Docker Hub 获取数据"
-    echo "null"
+    echo "unknown"  # 使用 'unknown' 作为默认值
     exit 0
 fi
 
@@ -56,7 +56,7 @@ latest_info=$(echo "$response" | jq -r '.results[] | select(.name=="latest")')
 # 检查是否找到了 latest 标签
 if [ -z "$latest_info" ]; then
     echo "未找到 'latest' 标签"
-    echo "null"
+    echo "unknown"  # 使用 'unknown' 作为默认值
     exit 0
 fi
 
@@ -66,9 +66,9 @@ latest_digest=$(echo "$latest_info" | jq -r '.digest')
 # 查找与 latest 标签Digest相同的所有标签，并排除 latest
 matching_tags=$(echo "$response" | jq -r --arg digest "$latest_digest" '.results[] | select(.digest==$digest and .name!="latest") | .name')
 
-# 输出匹配的版本号
+# 输出匹配的版本号或使用默认值
 if [ -z "$matching_tags" ]; then
-    echo "null"
+    echo "unknown"
 else
     echo "$matching_tags"
 fi
