@@ -38,17 +38,26 @@ jobs:
       run: |
         echo "Remote package.json version: $remote_version"
         echo "Docker latest version: $docker_version"
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        git clone https://x-access-token:${PAT}@github.com/Akuma-real/sharkey-dev-docker.git
+        cd sharkey-dev-docker
+        git checkout master
         if [ "$remote_version" != "$docker_version" ]; then
           echo "版本不同，需要更新。"
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git clone https://x-access-token:${PAT}@github.com/Akuma-real/sharkey-dev-docker.git
-          cd sharkey-dev-docker
-          git checkout master
-          echo "$remote_version" > remote_version
+          echo "Extracted remote version: $remote_version" > remote_version
           git add remote_version
           git commit -m "Update remote_version to $remote_version"
           git push origin master
         else
-          echo "版本相同，无需更新。"
+          echo "版本相同，检查文件是否存在。"
+          if [ ! -f remote_version ]; then
+            echo "文件不存在，正在创建。"
+            echo "$remote_version" > remote_version
+            git add remote_version
+            git commit -m "Create remote_version file with $remote_version"
+            git push origin master
+          else
+            echo "文件已存在，无需更新。"
+          fi
         fi
