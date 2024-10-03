@@ -16,8 +16,7 @@ jobs:
     - name: Extract Version from package.json
       id: extract_version
       run: |
-        cd Sharkey
-        remote_version=$(jq -r '.version' package.json)
+        remote_version=$(jq -r '.version' Sharkey/package.json)
         echo "remote_version=$remote_version" >> $GITHUB_ENV
         echo "Extracted remote version: $remote_version"
 
@@ -31,12 +30,25 @@ jobs:
         echo "docker_version=$latest_version" >> $GITHUB_ENV
       shell: bash
 
-    - name: Compare Versions
+    - name: Compare and Update Versions
+      env:
+        remote_version: ${{ env.remote_version }}
+        docker_version: ${{ env.docker_version }}
+        PAT: ${{ secrets.PAT }}
       run: |
-        echo "Remote package.json version: ${{ env.remote_version }}"
-        echo "Docker latest version: ${{ env.docker_version }}"
-        if [ "${{ env.remote_version }}" != "${{ env.docker_version }}" ]; then
+        echo "Remote package.json version: $remote_version"
+        echo "Docker latest version: $docker_version"
+        if [ "$remote_version" != "$docker_version" ]; then
           echo "版本不同，需要更新。"
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git clone https://x-access-token:${PAT}@github.com/Akuma-real/sharkey-dev-docker.git
+          cd sharkey-dev-docker
+          git checkout master
+          echo "$remote_version" > remote_version
+          git add remote_version
+          git commit -m "Update remote_version to $remote_version"
+          git push origin master
         else
           echo "版本相同，无需更新。"
         fi
