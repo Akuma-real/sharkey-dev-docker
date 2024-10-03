@@ -26,9 +26,10 @@ jobs:
         curl -o check_docker_hub_latest_version.sh \
           https://raw.githubusercontent.com/Akuma-real/sharkey-dev-docker/refs/heads/master/check_docker_hub_latest_version.sh
         chmod +x check_docker_hub_latest_version.sh
-        latest_version=$(./check_docker_hub_latest_version.sh | grep '与' | awk '{print $NF}')
+        latest_version=$(./check_docker_hub_latest_version.sh)
+        echo "Docker script output: $latest_version"
         echo "docker_version=$latest_version" >> $GITHUB_ENV
-        echo "Extracted Docker version: $latest_version"
+      shell: bash
 
     - name: Compare Versions
       run: |
