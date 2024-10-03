@@ -34,7 +34,7 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
     - name: Build and Push Docker Image
-        working-directory: ./Sharkey
-        run: |
-          docker buildx build --platform linux/amd64 --build-arg VERSION=${{ env.VERSION }} -t juneink/sharkey:${{ env.VERSION }} -t juneink/sharkey:latest --push .
+      working-directory: ./Sharkey
+      run: |
+        docker buildx build --platform linux/amd64 --build-arg VERSION=${{ env.VERSION }} -t juneink/sharkey:${{ env.VERSION }} -t juneink/sharkey:latest --push .
 
